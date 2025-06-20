@@ -93,4 +93,5 @@ app.get("/group/demote", async (req, res) => {
 });
 
 // Start server
-app.listen(3000, () => console.log("🚀 Bot server running on port 3000"));
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`🚀 Bot server running on port ${PORT}`));
