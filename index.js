@@ -5,24 +5,29 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
+let botReady = false; // ✅ Flag to ensure we're logged in
+
 // 🔐 Login using your bot's cookie
 (async () => {
   try {
     await noblox.setCookie(process.env.ROBLOX_COOKIE);
     const user = await noblox.getCurrentUser();
     console.log(`🤖 Logged in as ${user.UserName}`);
+    botReady = true;
   } catch (err) {
-    console.error("Login failed:", err);
+    console.error("❌ Login failed:", err);
   }
 })();
 
-// ✅ For UptimeRobot
+// ✅ Uptime check
 app.get("/rank", (req, res) => {
   res.send("✅ Rank bot is alive and running!");
 });
 
-// 🚀 POST /rank: for touchpads or scripted HTTPService
+// 🚀 POST /rank: promote user
 app.post("/rank", async (req, res) => {
+  if (!botReady) return res.status(503).send("Bot not ready");
+
   const { UserId, Group, Role } = req.body;
   if (!UserId || !Group || !Role) {
     return res.status(400).send("Missing data");
@@ -37,13 +42,15 @@ app.post("/rank", async (req, res) => {
     console.log(`✅ Ranked UserId ${UserId} to ${Role}`);
     res.send("Ranked successfully");
   } catch (err) {
-    console.error("Ranking error:", err);
-    res.status(500).send("Error ranking user");
+    console.error("❌ Ranking error:", err.message);
+    res.status(500).send("Error ranking user: " + err.message);
   }
 });
 
-// 🔼 GET /group/promote: promote by username
+// 🔼 GET /group/promote
 app.get("/group/promote", async (req, res) => {
+  if (!botReady) return res.status(503).send("Bot not ready");
+
   const { user_name, groupid } = req.query;
   if (!user_name || !groupid) return res.status(400).send("Missing data");
 
@@ -62,13 +69,15 @@ app.get("/group/promote", async (req, res) => {
     console.log(`✅ Promoted ${user_name} to ${nextRole.name}`);
     res.send("Promoted successfully");
   } catch (err) {
-    console.error("Promotion error:", err);
-    res.status(500).send("Promotion failed");
+    console.error("❌ Promotion error:", err.message);
+    res.status(500).send("Promotion failed: " + err.message);
   }
 });
 
-// 🔽 GET /group/demote: demote by username
+// 🔽 GET /group/demote
 app.get("/group/demote", async (req, res) => {
+  if (!botReady) return res.status(503).send("Bot not ready");
+
   const { user_name, groupid } = req.query;
   if (!user_name || !groupid) return res.status(400).send("Missing data");
 
@@ -87,11 +96,11 @@ app.get("/group/demote", async (req, res) => {
     console.log(`✅ Demoted ${user_name} to ${lowerRole.name}`);
     res.send("Demoted successfully");
   } catch (err) {
-    console.error("Demotion error:", err);
-    res.status(500).send("Demotion failed");
+    console.error("❌ Demotion error:", err.message);
+    res.status(500).send("Demotion failed: " + err.message);
   }
 });
 
-// Start server
+// ✅ Start server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`🚀 Bot server running on port ${PORT}`));
